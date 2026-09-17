@@ -37,8 +37,7 @@ function [licImage,rc,texture] = DELIC(U,V,scalarField,initInterval,voronoiItera
     if nargin < 7, stepSize = 0.1; end
     if nargin < 8, sigma = 1; end
     if nargin < 9, LB = 0.35; end
-    if nargin < 10, Parallel = 0; end
-    if nargin < 11, verbose = 1; end
+    if nargin < 10, verbose = 1; end
 
     assert(isnumeric(U) && ismatrix(U), 'U should be a numeric matrix');
     assert(isnumeric(V) && ismatrix(V), 'V should be a numeric matrix');
