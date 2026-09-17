@@ -22,10 +22,9 @@ numSteps = 50;
 stepSize = 0.1;
 sigma = 1;
 LB = 0.35;
-Parallel = 1;
 verbose = 1;
 
-[licImage,~,~] = DELIC(U,V,dn,initInterval,voronoiIteration,numSteps,stepSize,sigma,LB,Parallel,verbose);
+[licImage,~,~] = DELIC(U,V,dn,initInterval,voronoiIteration,numSteps,stepSize,sigma,LB,verbose);
 
 %% Normalise DELIC image 
 Vmax = max(licImage(:));

@@ -1,138 +1,148 @@
-function [licImage] = LIC(U,V,texture,windo,numSteps,stepSize)
+function [licImage] = LIC(U, V, texture, windo, numSteps, stepSize)
 
 [NY, NX] = size(U);
 licImage = zeros(NY, NX);
 
-%Generate linear interpolant Objects
-% [xGrid, yGrid] = meshgrid(linspace(1, size(scalarField,2), size(scalarField,2)), linspace(1, size(scalarField,1), size(scalarField,1)));
-% interpObj_U = griddedInterpolant(yGrid, xGrid, U,'linear','none');
-% interpObj_V = griddedInterpolant(yGrid, xGrid, V,'linear','none');
+% Bilinear interp
+function val = interpField(F, x, y)
 
-for i = 1:NX %Iterate through lateral pos
-    for j = 1:NY %Iterate through depth pos
+    ix = floor(x);
+    iy = floor(y);
 
-        % Define a boundary clipping function. Defining it within the parfor reduces overhead
-        assertV = @(val, minVal, maxVal) max(min(val, maxVal), minVal);
-        u = @(x, y) U(assertV(round(x), 1, NY), assertV(round(y), 1, NX));
-        v = @(x, y) V(assertV(round(x), 1, NY), assertV(round(y), 1, NX));
+    fx = x - ix;
+    fy = y - iy;
 
-        % assertV = @(val, minVal, maxVal) max(min(val, maxVal), minVal);
-        % u = @(x, y) interpObj_U(assertV(x, 1, maxY), assertV(y, 1, maxX));
-        % v = @(x, y) interpObj_V(assertV(x, 1, maxY), assertV(y, 1, maxX));
+    ix = max(1, min(ix, NX-1));
+    iy = max(1, min(NY-1, iy));
 
-        % Initialize streamline
-        x = i;
-        y = j;
+    v11 = F(iy,   ix);
+    v21 = F(iy,   ix+1);
+    v12 = F(iy+1, ix);
+    v22 = F(iy+1, ix+1);
 
-        % Forward integration with Gaussian window
-        sum = texture(j, i) * exp(-(0^2)/(2*1^2));
-        weightSum = exp(-(0^2)/(2*1^2));
+    val = (1-fx)*(1-fy)*v11 + ...
+          fx*(1-fy)*v21 + ...
+          (1-fx)*fy*v12 + ...
+          fx*fy*v22;
+end
+
+% LIC LOOP
+for i = 1:NX
+    for j = 1:NY
+
+        x0 = i;
+        y0 = j;
+
+        sumVal = texture(j,i);
+        weightSum = windo(1);
+
+        % Forward integration
+        x = x0;
+        y = y0;
+
+        prevVec = [interpField(U,x,y), interpField(V,x,y)];
 
         for k = 1:numSteps
-            % Update position using the RK4
-            % Calculate the k values
-            k1U = u(y, x);
-            k1V = v(y, x);
 
-            k2U = u(y + 0.5 * k1U, x + 0.5 * k1V);
-            k2V = v(y + 0.5 * k1U, x + 0.5 * k1V);
+            vcurr = [interpField(U,x,y), interpField(V,x,y)];
 
-            k3U = u(y + 0.5 * k2U, x + 0.5 * k2V);
-            k3V = v(y + 0.5 * k2U, x + 0.5 * k2V);
+            % normalize (important for stability)
+            n = norm(vcurr);
+            if n > 0
+                vcurr = vcurr / n;
+            end
 
-            k4U = u(y + k3U, x + k3V);
-            k4V = v(y + k3U, x + k3V);
+            % sign consistency
+            if dot(vcurr, prevVec) < 0
+                vcurr = -vcurr;
+            end
 
-            % Apply RK4 step
-            x = x + (1/6) * (k1U + 2*k2U + 2*k3U + k4U).*stepSize;
-            y = y + (1/6) * (k1V + 2*k2V + 2*k3V + k4V).*stepSize;
+            prevVec = vcurr;
 
-            % Ensure streanlines are within bounds
+            % step
+            x = x + vcurr(1)*stepSize;
+            y = y + vcurr(2)*stepSize;
+
+            %break if leave image domain
             if x < 1 || x > NX || y < 1 || y > NY
                 break;
             end
 
-            % 2D linear interp
-
             ix = floor(x);
             iy = floor(y);
+
             fx = x - ix;
             fy = y - iy;
 
-
             if ix >= 1 && ix < NX && iy >= 1 && iy < NY
-                % Calculate Gaussian weight
-                weight = windo(k);
 
-                % Accumulate texture with Gaussian weighting
-                % Accumulate texture with Gaussian weighting
-                value = (1 - fx) * (1 - fy) * texture(iy, ix) + ...
-                    fx * (1 - fy) * texture(iy, ix + 1) + ...
-                    (1 - fx) * fy * texture(iy + 1, ix) + ...
-                    fx * fy * texture(iy + 1, ix + 1);
+                w = windo(k);
 
-                if value < 0.05 % Helps to reduce dark regions in DELIC image 
-                    continue;
+                value = (1-fx)*(1-fy)*texture(iy,ix) + ...
+                    fx*(1-fy)*texture(iy,ix+1) + ...
+                    (1-fx)*fy*texture(iy+1,ix) + ...
+                    fx*fy*texture(iy+1,ix+1);
+
+                if value >= 0.05
+                    sumVal = sumVal + value*w;
+                    weightSum = weightSum + w;
                 end
-
-                sum = sum + value * weight;
-                weightSum = weightSum + weight;
             end
         end
 
-        % Backward integration with Gaussian window
-        x = i;
-        y = j;
+
+        % Backward integration
+        x = x0;
+        y = y0;
+
+        prevVec = [interpField(U,x,y), interpField(V,x,y)];
+
         for k = 1:numSteps
-            % Update position using the RK4
-            k1U = u(y, x);
-            k1V = v(y, x);
 
-            k2U = u(y - 0.5 * k1U, x - 0.5 * k1V);
-            k2V = v(y - 0.5 * k1U, x - 0.5 * k1V);
+            vcurr = [interpField(U,x,y), interpField(V,x,y)];
 
-            k3U = u(y - 0.5 * k2U, x - 0.5 * k2V);
-            k3V = v(y - 0.5 * k2U, x - 0.5 * k2V);
+            n = norm(vcurr);
+            if n > 0
+                vcurr = vcurr / n;
+            end
 
-            k4U = u(y - k3U, x - k3V);
-            k4V = v(y - k3U, x - k3V);
+            if dot(vcurr, prevVec) < 0
+                vcurr = -vcurr;
+            end
 
-            % Apply RK4 step
-            x = x - (1/6) * (k1U + 2*k2U + 2*k3U + k4U).*stepSize;
-            y = y - (1/6) * (k1V + 2*k2V + 2*k3V + k4V).*stepSize;
+            prevVec = vcurr;
 
-            % Ensure indices are within bounds
+            x = x - vcurr(1)*stepSize;
+            y = y - vcurr(2)*stepSize;
+
             if x < 1 || x > NX || y < 1 || y > NY
                 break;
             end
 
-            % Bilinear interpolation
             ix = floor(x);
             iy = floor(y);
+
             fx = x - ix;
             fy = y - iy;
-            %
+
             if ix >= 1 && ix < NX && iy >= 1 && iy < NY
-                % Calculate Gaussian weight
-                weight = windo(k);
 
-                % Accumulate texture with Gaussian weighting
-                value = (1 - fx) * (1 - fy) * texture(iy, ix) + ...
-                    fx * (1 - fy) * texture(iy, ix + 1) + ...
-                    (1 - fx) * fy * texture(iy + 1, ix) + ...
-                    fx * fy * texture(iy + 1, ix + 1);
-                % 
-                if value < 0.05 %0.1
-                    continue;
+                w = windo(k);
+
+                value = (1-fx)*(1-fy)*texture(iy,ix) + ...
+                    fx*(1-fy)*texture(iy,ix+1) + ...
+                    (1-fx)*fy*texture(iy+1,ix) + ...
+                    fx*fy*texture(iy+1,ix+1);
+
+                if value >= 0.05
+                    sumVal = sumVal + value*w;
+                    weightSum = weightSum + w;
                 end
-
-                sum = sum + value * weight;
-                weightSum = weightSum + weight;
             end
         end
 
-        % Store the result
-        licImage(j, i) = sum / weightSum;
+        licImage(j,i) = sumVal / weightSum;
 
     end
+end
 end

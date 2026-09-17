@@ -1,4 +1,4 @@
-function [licImage,rc,texture] = DELIC(U,V,scalarField,initInterval,voronoiIteration,numSteps,stepSize,sigma,LB,Parallel,verbose)
+function [licImage,rc,texture] = DELIC(U,V,scalarField,initInterval,voronoiIteration,numSteps,stepSize,sigma,LB,verbose)
     %% DELICT: Density Encoded Line Integral Convolution for visualizing vector fields
 
     % This function performs Density Encoded Line Integral Convolution (DELICT) to visualize 
@@ -10,12 +10,12 @@ function [licImage,rc,texture] = DELIC(U,V,scalarField,initInterval,voronoiItera
     %   V               - 2D array representing the y-component of the vector field (optical axis).
     %   scalarField     - 2D array representing the scalar field (e.g., birefringence or another property).
     %   initInterval    - Integer defining the initial interval for setting up the texture (default: 4).
-    %   voronoiIteration- Integer defining the number of iterations for Voronoi relaxation (default: 20).
+    %   voronoiIteration- Integer defining the number of iterations for
+    %                     Voronoi relaxation. Setting to zero results in no further refinement after rejection sampliong (default: 20).   
     %   numSteps        - Integer defining the number of steps for each streamline (default: 50).
     %   stepSize        - Scalar defining the step size for the integration (default: 0.1).
     %   sigma           - Scalar defining the standard deviation for the Gaussian window (default: 1).
     %   LB              - Scalar defining the lower bound for Sobol sequence scaling (default: 0.35).
-    %   Parallel        - Integer flag (0 or 1) to toggle use of parfor or for loop in LIC compute (default: 0).
     %   verbose         - Integer flag (0 or 1) to control verbosity of the function (default: 1).
     %
     % Output:
@@ -46,7 +46,7 @@ function [licImage,rc,texture] = DELIC(U,V,scalarField,initInterval,voronoiItera
     assert(isequal(size(U), size(V)), 'U and V should have the same dimensions');
     assert(isequal(size(U), size(scalarField)), 'U, V and scalarField should have the same dimensions');
     assert(initInterval > 0, 'initInterval should be a positive integer');
-    assert(voronoiIteration > 0, 'voronoiIteration should be a positive integer');
+    assert(voronoiIteration >= 0, 'voronoiIteration should be a positive integer');
     assert(numSteps > 0, 'numSteps should be a positive integer');
     assert(stepSize > 0, 'stepSize should be a positive number');
     assert(sigma > 0, 'sigma should be a positive number');
@@ -100,11 +100,15 @@ function [licImage,rc,texture] = DELIC(U,V,scalarField,initInterval,voronoiItera
     if verbose == 1
         tic
     end
-    [rc] = weighted_voronoi_relaxation(Padded_Grid, iteration, overRelax,scalarField,plotShow,verbose);
-    if verbose == 1
-        disp(['Voronoi Relaxation computed in ',num2str(toc), ' seconds'])
-    end
 
+    if iteration > 0
+        [rc] = weighted_voronoi_relaxation(Padded_Grid, iteration, overRelax,scalarField,plotShow,verbose);
+        if verbose == 1
+            disp(['Voronoi Relaxation computed in ',num2str(toc), ' seconds'])
+        end
+    else
+        rc = Padded_Grid;
+    end
     % Remove padding
     rc = setdiff(rc, EdgePoints, 'rows');
    
@@ -163,11 +167,7 @@ function [licImage,rc,texture] = DELIC(U,V,scalarField,initInterval,voronoiItera
         tic
     end
     
-    if Parallel == 1
-        licImage = LIC_Parfor(U,V,texture,windo,numSteps,stepSize);
-    else
-        licImage = LIC(U,V,texture,windo,numSteps,stepSize);
-    end
+    licImage = LIC(U,V,texture,windo,numSteps,stepSize);
 
     if verbose == 1
         tic
