@@ -21,18 +21,15 @@ Key functions in this repository include:
 2) GenerateColorDelic.m: A helper function that allows you to embed colors into your DELIC images, enhancing visualization.
 3) WeightedCentroidalVoronoi.m: Computes a weighted Centroidal Voronoi Tessellation (CVT) using Lloyd's algorithm. This function can be modified for various applications beyond DELIC.
 
-** Usage: **
+**Usage:**
 
 1. Install **MATLAB R2023a or later**.
 2. Ensure the following MATLAB toolboxes are installed:
-   - **Statistics and Machine Learning Toolbox** – used to generate the Sobol quasi-random sequence for CVT seed initialisation. If this toolbox is not available, the Sobol sequence can be replaced with standard random number generation.
-   - **Signal Processing Toolbox** – used to generate the Gaussian window. If this toolbox is not available, the Gaussian window can be defined manually.
+   - **Statistics and Machine Learning Toolbox** – used to generate Sobol quasi-random numbers. If this toolbox is not available, the Sobol sequence can be replaced with standard random number generation.
+   - **Signal Processing Toolbox** – used to generate a Gaussian window. If this toolbox is not available, the Gaussian window can be defined manually.
 3. Add the repository and its subdirectories to the MATLAB path.
-4. Open MATLAB and run:
+4. Open MATLAB and run: demo.m
 
-```matlab
-demo
 **Citation:**
-
 If you use this method in your research, we would greatly appreciate if you cite our original paper! The citation details can be found in the [Paper URL].
 
