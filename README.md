@@ -34,5 +34,4 @@ Key functions in this repository include:
 
 If you use this method in your research, please cite our original paper:
 
-> Murali Tharan, D., Bonesi, M., Everett, D., McGoverin, C., McGlashan, S., Thambyah, A., & Vanholsbeeck, F. (2026). Enhanced Optical Axis Visualization in Polarization-Sensitive OCT Using Density-Encoded Line Integral Convolution. *IEEE Transactions on Visualization and Computer Graphics*. Early Access.
-
+> Murali Tharan, D., Bonesi, M., Everett, D., McGoverin, C., McGlashan, S., Thambyah, A., & Vanholsbeeck, F. (2026). Enhanced Optical Axis Visualization in Polarization-Sensitive OCT Using Density-Encoded Line Integral Convolution. *IEEE Transactions on Visualization and Computer Graphics*. [https://doi.org/10.1109/TVCG.2026.3737078](https://doi.org/10.1109/TVCG.2026.3737078)
