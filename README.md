@@ -31,5 +31,6 @@ Key functions in this repository include:
 4. Open MATLAB and run: demo.m
 
 **Citation:**
-If you use this method in your research, we would greatly appreciate if you cite our original paper! The citation details can be found in the [Paper URL].
+If you use this method in your research, we would greatly appreciate if you cite our original paper. It's out on early access of IEEE Transactions on Visualization and Computer Graphics.
+Murali Tharan, D., Bonesi, M., Everett, D., McGoverin, C., McGlashan, S., Thambyah, A., & Vanholsbeeck, F. (2026). Enhanced Optical Axis Visualization in Polarization-Sensitive OCT Using Density-Encoded Line Integral Convolution. IEEE Transactions on Visualization and Computer Graphics.
 
